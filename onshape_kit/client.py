@@ -1,7 +1,7 @@
 """Thin Onshape REST client.
 
 Everything that talks to Onshape goes through `Client`, which provides:
-  * Basic auth with API keys (read-only key by default, read-write key for writes)
+  * Basic auth with one API key (an optional separate ONSHAPE_RW_* key is used for writes)
   * A rate limiter shared across processes (MCP server + CLI) via a state file
   * A response cache keyed by document microversion, so unchanged documents cost nothing
   * A write guard: writes only to workspaces named `claude/...`
