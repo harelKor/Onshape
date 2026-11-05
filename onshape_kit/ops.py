@@ -111,11 +111,21 @@ def run_fs_query(url: str, query: str) -> object:
     path = QUERIES_DIR / (query if query.endswith(".fs") else f"{query}.fs")
     script = path.read_text(encoding="utf-8") if path.exists() else query
     result = client().evaluate(f"/partstudios/{ref.dwvme}/featurescript", ref, {"script": script, "queries": []})
-    if result.get("notices"):
-        errors = [n for n in result["notices"] if n.get("level") == "ERROR" or "ERROR" in str(n.get("type", ""))]
-        if errors:
-            raise OnshapeError(f"FeatureScript query failed: {errors[:3]}")
+    errors = fs_errors(result)
+    if errors:
+        raise OnshapeError("FeatureScript query failed: " + "; ".join(errors[:3]))
     return fsvalue.decode(result.get("result"))
+
+
+def fs_errors(result) -> list[str]:
+    """Error notices from a FeatureScript evaluation or Feature Studio push, as 'line N: message'."""
+    errors = []
+    for n in (result or {}).get("notices") or [] if isinstance(result, dict) else []:
+        msg = n.get("message", n)
+        if msg.get("level") == "ERROR":
+            loc = next(iter(msg.get("stackTrace") or []), {}).get("message", {})
+            errors.append(f"line {loc.get('line', '?')}: {msg.get('message')}")
+    return errors
 
 
 def plate_report(url: str) -> list:

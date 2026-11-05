@@ -40,6 +40,25 @@ def _load_env_local() -> dict:
     return values
 
 
+def _user_env(name: str) -> str | None:
+    """Read a Windows user environment variable straight from the registry, so keys set after
+    the Claude app started work without restarting it."""
+    try:
+        import winreg
+    except ImportError:
+        return None
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
+            return winreg.QueryValueEx(key, name)[0] or None
+    except OSError:
+        return None
+
+
+def _has_error_notice(result) -> bool:
+    notices = result.get("notices") if isinstance(result, dict) else None
+    return any((n.get("message", n) or {}).get("level") == "ERROR" for n in notices or [])
+
+
 class _FileLock:
     def __init__(self, path, stale_seconds=10):
         self.path = path
@@ -126,7 +145,7 @@ class Client:
         self._mv_memo: dict[tuple[str, str], tuple[float, str]] = {}
         self._ws_memo: dict[str, tuple[float, list]] = {}
         env_local = _load_env_local()
-        self._env = lambda name: os.environ.get(name) or env_local.get(name)
+        self._env = lambda name: os.environ.get(name) or _user_env(name) or env_local.get(name)
 
     # ---- auth -------------------------------------------------------------
 
@@ -140,7 +159,7 @@ class Client:
         if not access or not secret:
             raise OnshapeError(
                 "Onshape API keys are not set. Set ONSHAPE_ACCESS_KEY / ONSHAPE_SECRET_KEY as Windows "
-                "user environment variables (see .env.example) and restart the Claude app."
+                "user environment variables (see .env.example)."
             )
         token = base64.b64encode(f"{access}:{secret}".encode()).decode()
         return f"Basic {token}"
@@ -205,7 +224,8 @@ class Client:
         if cache_file.exists():
             return json.loads(cache_file.read_text(encoding="utf-8"))
         result = self.request(method, path, params, body)
-        cache_file.write_text(json.dumps(result), encoding="utf-8")
+        if not _has_error_notice(result):  # a fixed script must not hit a cached failure
+            cache_file.write_text(json.dumps(result), encoding="utf-8")
         return result
 
     # ---- guarded writes ---------------------------------------------------

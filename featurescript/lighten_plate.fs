@@ -118,7 +118,7 @@ export const lightenPlate = defineFeature(function(context is Context, id is Id,
 function pocketCenters(context is Context, definition is map, facePlane is Plane,
     radius is ValueWithUnits, pitch is ValueWithUnits) returns array
 {
-    const box = evBox3d(context, { "topology" : definition.face, "cSys" : planeToCSys(facePlane), "tight" : true });
+    const bounds = evBox3d(context, { "topology" : definition.face, "cSys" : planeToCSys(facePlane), "tight" : true });
 
     const edges = qAdjacent(definition.face, AdjacencyType.EDGE, EntityType.EDGE);
     const holeEdges = qGeometry(edges, GeometryType.CIRCLE);
@@ -130,11 +130,11 @@ function pocketCenters(context is Context, definition is map, facePlane is Plane
     // Rows are pitch·√3/2 apart and every other row shifts half a pitch: a hexagonal lattice.
     const rowStep = pitch * sqrt(3) / 2;
     var centers = [];
-    for (var j = floor(box.minCorner[1] / rowStep); j <= ceil(box.maxCorner[1] / rowStep); j += 1)
+    for (var j = floor(bounds.minCorner[1] / rowStep); j <= ceil(bounds.maxCorner[1] / rowStep); j += 1)
     {
         const v = j * rowStep;
         const shift = (abs(j) % 2) * pitch / 2;
-        for (var i = floor((box.minCorner[0] - shift) / pitch); i <= ceil((box.maxCorner[0] - shift) / pitch); i += 1)
+        for (var i = floor((bounds.minCorner[0] - shift) / pitch); i <= ceil((bounds.maxCorner[0] - shift) / pitch); i += 1)
         {
             const u = shift + i * pitch;
             const world = facePlane.origin + u * facePlane.x + v * yDir;
@@ -155,6 +155,6 @@ function pocketCenters(context is Context, definition is map, facePlane is Plane
 /** Extent of a body along a plane's normal — the thickness, for a flat plate. */
 function thicknessAlongNormal(context is Context, body is Query, facePlane is Plane) returns ValueWithUnits
 {
-    const box = evBox3d(context, { "topology" : body, "cSys" : planeToCSys(facePlane), "tight" : true });
-    return box.maxCorner[2] - box.minCorner[2];
+    const bounds = evBox3d(context, { "topology" : body, "cSys" : planeToCSys(facePlane), "tight" : true });
+    return bounds.maxCorner[2] - bounds.minCorner[2];
 }

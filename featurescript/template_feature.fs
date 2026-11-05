@@ -68,6 +68,6 @@ export const mountingHole = defineFeature(function(context is Context, id is Id,
 /** Extent of a body along a plane's normal — the thickness, for a flat plate. */
 function thicknessAlongNormal(context is Context, body is Query, facePlane is Plane) returns ValueWithUnits
 {
-    const box = evBox3d(context, { "topology" : body, "cSys" : planeToCSys(facePlane), "tight" : true });
-    return box.maxCorner[2] - box.minCorner[2];
+    const bounds = evBox3d(context, { "topology" : body, "cSys" : planeToCSys(facePlane), "tight" : true });
+    return bounds.maxCorner[2] - bounds.minCorner[2];
 }

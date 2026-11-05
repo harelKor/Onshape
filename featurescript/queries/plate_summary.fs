@@ -28,12 +28,12 @@ function(context is Context, queries is map)
         if (largest != undefined)
         {
             const facePlane = evPlane(context, { "face" : largest });
-            const box = evBox3d(context, { "topology" : body, "cSys" : planeToCSys(facePlane), "tight" : true });
+            const bounds = evBox3d(context, { "topology" : body, "cSys" : planeToCSys(facePlane), "tight" : true });
             entry.faceId = transientQueriesToStrings(largest);
             entry.faceArea = largestArea;
-            entry.thickness = box.maxCorner[2] - box.minCorner[2];
-            const dx = box.maxCorner[0] - box.minCorner[0];
-            const dy = box.maxCorner[1] - box.minCorner[1];
+            entry.thickness = bounds.maxCorner[2] - bounds.minCorner[2];
+            const dx = bounds.maxCorner[0] - bounds.minCorner[0];
+            const dy = bounds.maxCorner[1] - bounds.minCorner[1];
             entry.length = max(dx, dy);
             entry.width = min(dx, dy);
 
