@@ -1,0 +1,22 @@
+# Secrets — keys belong in Windows user environment variables (see .env.example)
+.env
+.env.*
+!.env.example
+*.env
+
+# Local Claude settings and app-managed worktrees
+.claude/settings.local.json
+.claude/worktrees/
+
+# Generated output
+exports/*
+!exports/.gitkeep
+.cache/
+
+# Tooling
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+.vscode/
+.DS_Store

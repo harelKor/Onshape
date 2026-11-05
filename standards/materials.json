@@ -1,0 +1,101 @@
+{
+  "_source": "Stock list copied from OrbitParts (Raw Stock) on 2026-11-05 — a snapshot, update by hand when stock changes. Densities are typical handbook values; entries with \"verify\": true need a team check.",
+
+  "materials": {
+    "aluminum": {
+      "displayName": "Aluminum 6061-T6",
+      "densityKgM3": 2700,
+      "verify": true,
+      "_note": "Alloy assumed 6061-T6 — change if the team's plate/tube stock is another alloy.",
+      "stock": {
+        "plateThicknessMm": [1, 2, 2.5, 3, 4, 4.3, 5, 6.7, 8.4, 10, 12.7],
+        "boxTube": ["10x10", "15x15", "20x20x1.5", "25x25x1.5", "25x25x2", "25x25x3", "25x50x1.5", "25x50x3", "35x35x2", "40x40x1.5", "40x40x2", "40x40x3", "40x40x4.5", "40x40x5", "50x25x1.5", "50x50x1.5", "50x50x2", "50x50x3", "60x60x1.5", "80x80x2"],
+        "roundTube": ["22x1.5", "32x1.5"],
+        "standoffMm": [8, 10]
+      }
+    },
+    "polycarbonate": {
+      "displayName": "Polycarbonate",
+      "densityKgM3": 1200,
+      "stock": {
+        "plateThicknessMm": [1, 1.5, 2, 3, 4, 5, 6, 8, 10],
+        "roundTube": ["38x1.5"]
+      }
+    },
+    "carbonFiber": {
+      "displayName": "Carbon fiber (tube)",
+      "densityKgM3": 1550,
+      "stock": {
+        "roundTube": ["10x1", "12x1", "12x2", "15x1", "16x1", "16x2", "20x1", "25x1", "25x2", "30x1", "30x1.5", "40x2.5", "42x1", "48x1", "135x0.5"]
+      }
+    },
+    "hexShaft": {
+      "displayName": "Hex shaft",
+      "densityKgM3": 2810,
+      "verify": true,
+      "_note": "Assumed 7075 aluminum. Use steelShaft instead if the team's hex stock is steel.",
+      "stock": { "hex": ["1/2\" hex", "1/2\" ThunderHex", "3/8\" hex", "3/8\" ThunderHex"] }
+    },
+    "steel": {
+      "displayName": "Steel",
+      "densityKgM3": 7850,
+      "stock": { "block": ["steel block"] }
+    },
+    "brass": {
+      "displayName": "Brass",
+      "densityKgM3": 8500,
+      "stock": { "block": ["brass block"] }
+    },
+    "birchPlywood": {
+      "displayName": "Birch plywood",
+      "densityKgM3": 680,
+      "stock": { "plateThicknessMm": [18] }
+    },
+    "sandwichPlywood": {
+      "displayName": "Sandwich plywood",
+      "densityKgM3": 650,
+      "verify": true,
+      "stock": { "plateThicknessMm": [6, 8, 10] }
+    },
+    "mdf": {
+      "displayName": "MDF",
+      "densityKgM3": 750,
+      "stock": { "plateThicknessMm": [8] }
+    },
+    "srpp": {
+      "displayName": "SRPP",
+      "densityKgM3": 920,
+      "verify": true,
+      "stock": { "plateThicknessMm": [4.76, 6.35] }
+    },
+    "softwood": {
+      "displayName": "Wood (2-by)",
+      "densityKgM3": 500,
+      "stock": { "lumber": ["2x2", "2x4"] }
+    },
+    "pla": {
+      "displayName": "PLA (printed)",
+      "densityKgM3": 1240,
+      "_note": "Solid density. Printed parts with partial infill are lighter — prefer a mass override for accurate weights."
+    },
+    "petg": { "displayName": "PETG (printed)", "densityKgM3": 1270, "_note": "Solid density; see pla note." },
+    "tpu": { "displayName": "TPU (printed)", "densityKgM3": 1210, "_note": "Solid density; see pla note." },
+    "onyx": { "displayName": "Markforged Onyx", "densityKgM3": 1200, "_note": "Solid density; see pla note." },
+    "pa612": { "displayName": "PA612 (printed)", "densityKgM3": 1060, "_note": "Solid density; see pla note." },
+    "sls": { "displayName": "SLS nylon (PA12)", "densityKgM3": 1010, "verify": true },
+    "printedSteel": { "displayName": "Printed steel (outsourced)", "densityKgM3": 7800, "verify": true }
+  },
+
+  "assignmentHints": [
+    { "nameRegex": "(?i)poly|\\bpc\\b|lexan", "material": "polycarbonate" },
+    { "nameRegex": "(?i)carbon|\\bcf\\b", "material": "carbonFiber" },
+    { "nameRegex": "(?i)hex.?shaft|thunderhex", "material": "hexShaft" },
+    { "nameRegex": "(?i)spacer|standoff", "material": "aluminum" },
+    { "nameRegex": "(?i)\\bpla\\b|print", "material": "pla" },
+    { "nameRegex": "(?i)petg", "material": "petg" },
+    { "nameRegex": "(?i)tpu", "material": "tpu" },
+    { "nameRegex": "(?i)plywood|ply\\b", "material": "birchPlywood" }
+  ],
+
+  "_assignmentHelp": "Hints are only a starting point. A flat plate whose thickness matches aluminum stock and has no other hint is most likely aluminum. Claude proposes; the user approves before anything is written."
+}

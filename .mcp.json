@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "onshape": {
+      "command": "python",
+      "args": ["-m", "onshape_kit.mcp_server"]
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "enabledMcpjsonServers": ["onshape"],
+  "permissions": {
+    "allow": [
+      "mcp__onshape__list_elements",
+      "mcp__onshape__list_workspaces",
+      "mcp__onshape__part_studio_summary",
+      "mcp__onshape__plate_report",
+      "mcp__onshape__list_features",
+      "mcp__onshape__run_fs_query",
+      "mcp__onshape__render",
+      "mcp__onshape__assembly_mass",
+      "mcp__onshape__weight_check",
+      "mcp__onshape__api_usage",
+      "Bash(python scripts/onshape_cli.py:*)",
+      "Read(./.cache/renders/**)"
+    ],
+    "ask": [
+      "mcp__onshape__set_material",
+      "mcp__onshape__add_lighten_feature",
+      "mcp__onshape__add_feature",
+      "mcp__onshape__push_feature_studio",
+      "mcp__onshape__create_version"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.*.local)",
+      "mcp__ef5ffae0-79fa-431d-9c9a-13e5f79639db"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard.py\"" }
+        ]
+      }
+    ]
+  }
+}
