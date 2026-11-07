@@ -6,6 +6,9 @@ which **shape** to pick. Two features:
   *Manual* = ribs along sketch lines. *Automatic* = generated ribs: Truss around holes (LT-0),
   Warren truss (LT-2), Grid (LT-3), Triangle grid (LT-1 alternative). Walls along every edge and a
   ring around every hole come from "Thickness of walls"; webs from "Thickness of ribs".
+  Published in Feature Studio **AutoLighten**, branch `claude/autolighten`
+  ([link](https://orbit1690.onshape.com/documents/303f1db504253f0f95b74c94/w/1ff32b80e8a5beebfad961ab/e/9c864f805f7ed3b4a60c1455)),
+  compiles clean on std 3112 (2026-11-07). Not yet run on a real plate.
 - `featurescript/lighten_plate.fs` — **Lighten Plate**: hexagon and circle lattices (LT-1, LT-4).
 
 ### LT-0 Truss pockets that wrap around holes — team habit (seen, not yet confirmed)
