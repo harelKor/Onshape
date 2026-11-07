@@ -17,8 +17,12 @@ Claude ──► scripts/onshape_cli.py (same code, for batch jobs) ─┘
   `requests` or ad-hoc code — the client holds the rate limiter, cache and write guard.
 - Keys come from Windows user environment variables (see `.env.example`). Never read,
   print or ask for key values.
+- `scripts/step_analyze.py` measures exported STEP files locally (no API calls) — prefer it for
+  studying past or other teams' designs. Setup: `standards/patterns/README.md`.
 - `onshape.config.json` lists the robot's systems, their design documents and weight budgets.
 - `standards/` holds the team rules Claude reviews against: `design-rules.md` and `materials.json`.
+  `standards/patterns/` holds the team's preferred solutions (lightening, joints, hardware,
+  lessons learned) that suggestions are based on.
 
 ## Hard rules
 
@@ -48,6 +52,8 @@ Use the skill for each workflow — they hold the step-by-step procedures:
 | `materials` | Find parts without materials and assign team materials |
 | `weight-check` | Total system / robot weight against budgets |
 | `new-feature` | Write or change FeatureScript in `featurescript/` and push it to Onshape |
+| `design-suggest` | Suggest lightening shapes, joints and hardware from `standards/patterns/` |
+| `learn-patterns` | Study team designs the user shares and record their habits in `standards/patterns/` |
 
 ## FeatureScript conventions (`featurescript/`)
 

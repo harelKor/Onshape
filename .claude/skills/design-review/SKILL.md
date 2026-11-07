@@ -16,6 +16,7 @@ description: Review an Onshape part studio or assembly against the team's design
 4. **Check every rule** in `standards/design-rules.md`. For each finding record: rule ID,
    part name, what's wrong with numbers ("3.2 mm plate — not a stocked thickness; nearest 3 mm"),
    and a concrete fix. Don't report rules that pass, except a one-line summary.
+   Base fixes on `standards/patterns/` where one fits (cite its ID) and check `lessons.md`.
 5. **Spot lightening candidates** (PL-7): plates with `isPlate`, large face area and few pockets.
    List them with an estimated saving; hand off to the `lighten` skill only if the user asks.
 6. **Write the report** to `reviews/<system>-<YYYY-MM-DD>.md`:
