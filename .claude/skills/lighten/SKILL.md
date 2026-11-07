@@ -19,6 +19,14 @@ description: Suggest or apply plate lightening (pockets) in an Onshape part stud
 4. Estimate the saving (rough: removed area fraction ≈ (s / (s + w))² for pocket flat size s and
    web w, times usable area inside margins × thickness × density). Present a table and stop.
 
+## Which feature
+
+- Truss / Warren / grid / triangle-grid pockets (LT-0, LT-2, LT-3): **PartLighten**
+  (`featurescript/part_lighten.fs`), Lightening type *Automatic*. Add it with `add_feature`
+  (feature type `lighteningGen`) once its Feature Studio is published; start from the numbers in
+  `standards/patterns/lightening.md`.
+- Hexagon / circle lattices (LT-1, LT-4): **Lighten Plate** via `add_lighten_feature` (below).
+
 ## Do mode (only when the user asks to apply)
 
 1. Confirm the URL is a `claude/` workspace (`list_workspaces`). If not, ask the user to branch
