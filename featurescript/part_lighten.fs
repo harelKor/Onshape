@@ -5,7 +5,9 @@
  * Find Me On ChiefDelphi @Mr_Fishy
  *
  * Edited By FRC 1690 Orbit — added Automatic rib patterns (truss around holes, Warren truss,
- * grid, triangle grid). Manual mode is unchanged, so existing features rebuild the same.
+ * grid, triangle grid), and Extrude-style depth options: Opposite direction, Symmetric (Blind)
+ * and Second end position. Manual mode and single-ended depths are unchanged, so existing
+ * features rebuild the same.
  *
  * How it works: the face is shrunk inward by (wall + tool radius) — that already leaves a wall
  * along every edge and a ring around every hole. Rib bars are then subtracted from that pocket
@@ -79,6 +81,12 @@ export predicate isManual(definition is map)
 export predicate isAuto(definition is map)
 {
     definition.lighten == lightenType.AUTO;
+}
+
+export predicate isSymmetric(definition is map)
+{
+    definition.endBound == LightenBoundingType.BLIND;
+    definition.symmetric == true;
 }
 
 annotation {  "Feature Type Name" : "PartLighten",
@@ -194,6 +202,43 @@ export const lighteningGen = defineFeature(function(context is Context, id is Id
             annotation { "Name" : "Up to vertex", "Filter" : EntityType.VERTEX, "MaxNumberOfPicks" : 1 }
             definition.endBoundEntityVertex is Query;
         }
+
+        annotation { "Name" : "Opposite direction", "UIHint" : UIHint.OPPOSITE_DIRECTION }
+        definition.oppositeDirection is boolean;
+
+        if (definition.endBound == LightenBoundingType.BLIND)
+        {
+            annotation { "Name" : "Symmetric", "Description" : "Cut half the depth to each side of the face" }
+            definition.symmetric is boolean;
+        }
+
+        if (!isSymmetric(definition))
+        {
+            annotation { "Name" : "Second end position", "Description" : "Also cut out of the other side of the face" }
+            definition.hasSecondDirection is boolean;
+
+            if (definition.hasSecondDirection)
+            {
+                annotation { "Name" : "Second end type", "UIHint" : "REMEMBER_PREVIOUS_VALUE" }
+                definition.secondEndBound is LightenBoundingType;
+
+                if (definition.secondEndBound == LightenBoundingType.BLIND)
+                {
+                    annotation { "Name" : "Second cut depth", "UIHint" : "REMEMBER_PREVIOUS_VALUE" }
+                    isLength(definition.secondDepth, NONNEGATIVE_LENGTH_BOUNDS);
+                }
+                else if (definition.secondEndBound == LightenBoundingType.UP_TO_SURFACE)
+                {
+                    annotation { "Name" : "Second up to face", "Filter" : EntityType.FACE && GeometryType.PLANE, "MaxNumberOfPicks" : 1 }
+                    definition.secondEndBoundEntityFace is Query;
+                }
+                else if (definition.secondEndBound == LightenBoundingType.UP_TO_VERTEX)
+                {
+                    annotation { "Name" : "Second up to vertex", "Filter" : EntityType.VERTEX, "MaxNumberOfPicks" : 1 }
+                    definition.secondEndBoundEntityVertex is Query;
+                }
+            }
+        }
     }
     {
         definition.entity = qOwnerBody(definition.face);
@@ -220,35 +265,30 @@ export const lighteningGen = defineFeature(function(context is Context, id is Id
                 throw regenError("No ribs fit this face with the chosen pattern. Try a smaller size.", [autoPatternParameter(definition)]);
             }
         }
-        // ----- Check if Up_To_Surface Plane is Parallel for Distance Measurement ----- //
-        if (isQueryEmpty(context, qParallelPlanes(definition.endBoundEntityFace, sPlane)) && definition.endBound == LightenBoundingType.UP_TO_SURFACE)
+        // ----- Depth Work: how far the cut goes on each side of the face ----- //
+        // "forward" is into the part (or out of it with Opposite direction), "backward" is the second end.
+        const forwardDir = definition.oppositeDirection == true ? sPlane.normal : -sPlane.normal;
+        var depths = { "direction" : forwardDir, "forward" : 0 * meter, "backward" : 0 * meter };
+        if (isSymmetric(definition))
         {
-            throw regenError("Face is not parallel to part.", ["endBoundEntityFace"], definition.endBoundEntityFace);
+            depths.forward = definition.depth / 2;
+            depths.backward = definition.depth / 2;
         }
-        // ----- Distance Calculations for Depth Work ----- //
-        var distance = evDistance(context, { "side0" : definition.face, "extendSide0" : true, "side1" : qParallelPlanes(qOwnedByBody(qEverything(EntityType.FACE), definition.entity), sPlane)->qSubtraction(definition.face)->qLargest(), "extendSide1" : true }).distance;
-        if (definition.endBound == LightenBoundingType.BLIND)
+        else
         {
-            distance = definition.depth;
-        }
-        else if (definition.endBound == LightenBoundingType.THROUGH)
-        {
-            const farthest = qFarthestAlong(qOwnedByBody(definition.entity, EntityType.EDGE), -sPlane.normal);
-
-            distance = evDistance(context, { "side0" : definition.face, "side1" : farthest, "maximum" : true }).distance;
-        }
-        else if (definition.endBound == LightenBoundingType.UP_TO_SURFACE || definition.endBound == LightenBoundingType.UP_TO_VERTEX)
-        {
-            var endBound = definition.endBoundEntityFace;
-
-            if (definition.endBound == LightenBoundingType.UP_TO_VERTEX)
+            depths.forward = endDistance(context, definition, forwardDir, definition.endBound, definition.depth,
+                definition.endBoundEntityFace, definition.endBoundEntityVertex, "endBoundEntityFace");
+            if (definition.hasSecondDirection == true)
             {
-                endBound = definition.endBoundEntityVertex;
+                depths.backward = endDistance(context, definition, -forwardDir, definition.secondEndBound, definition.secondDepth,
+                    definition.secondEndBoundEntityFace, definition.secondEndBoundEntityVertex, "secondEndBoundEntityFace");
             }
-
-            distance = evDistance(context, { "side0" : definition.face, "extendSide0" : true, "side1" : endBound, "extendSide1" : true }).distance;
         }
-        var part = baseOperations(context, id, definition.entity, sPlane, toolRad, definition, distance);
+        if (depths.forward + depths.backward < TOLERANCE.zeroLength * meter)
+        {
+            throw regenError("Cut depth is zero.", isSymmetric(definition) || definition.endBound == LightenBoundingType.BLIND ? ["depth"] : ["endBound"]);
+        }
+        var part = baseOperations(context, id, definition.entity, sPlane, toolRad, definition, depths);
         setFeatureComputedParameter(context, id, {
                     "name" : "ribs",
                     "value" : size(evaluateQuery(context, ribEdgeQuery(definition))) + size(definition.autoSegments)
@@ -268,6 +308,35 @@ export const lighteningGen = defineFeature(function(context is Context, id is Id
     });
 
 /**
+ * Distance from the face to one end of the cut, measured along `direction`.
+ * Same measurements as the original single-ended feature, so existing features keep their depth.
+ */
+function endDistance(context is Context, definition is map, direction is Vector, boundType is LightenBoundingType, depth,
+    boundFace, boundVertex, faceParameter is string) returns ValueWithUnits
+{
+    if (boundType == LightenBoundingType.BLIND)
+    {
+        return depth;
+    }
+    if (boundType == LightenBoundingType.THROUGH)
+    {
+        const farthest = qFarthestAlong(qOwnedByBody(definition.entity, EntityType.EDGE), direction);
+        return evDistance(context, { "side0" : definition.face, "side1" : farthest, "maximum" : true }).distance;
+    }
+    var endBound = boundVertex;
+    if (boundType == LightenBoundingType.UP_TO_SURFACE)
+    {
+        // ----- Up To Surface Plane must be Parallel for Distance Measurement ----- //
+        if (isQueryEmpty(context, qParallelPlanes(boundFace, evPlane(context, { "face" : definition.face }))))
+        {
+            throw regenError("Face is not parallel to part.", [faceParameter], boundFace);
+        }
+        endBound = boundFace;
+    }
+    return evDistance(context, { "side0" : definition.face, "extendSide0" : true, "side1" : endBound, "extendSide1" : true }).distance;
+}
+
+/**
  * Sketch edges that become ribs: the rib lines in Manual mode, the extra rib lines in Automatic mode.
  */
 function ribEdgeQuery(definition is map) returns Query
@@ -277,11 +346,12 @@ function ribEdgeQuery(definition is map) returns Query
 }
 
 /**
- * Takes the part, selection face, toolRad, definition, and distance.
+ * Takes the part, selection face, toolRad, definition, and depths
+ * ({ direction, forward, backward } from the face).
  *
  * Returns resulting part.
  */
-function baseOperations(context is Context, id is Id, part, face, toolRad, definition, distance)
+function baseOperations(context is Context, id is Id, part, face, toolRad, definition, depths is map)
 {
     var toDelete = new box([]);
 
@@ -291,21 +361,21 @@ function baseOperations(context is Context, id is Id, part, face, toolRad, defin
     {
         opExtrude(context, id + "secondExtrude", {
                     "entities" : definition.face,
-                    "direction" : -face.normal,
+                    "direction" : depths.direction,
                     "endBound" : BoundingType.BLIND,
-                    "endDepth" : distance + partOffset,
+                    "endDepth" : depths.forward + partOffset,
                     "startBound" : BoundingType.BLIND,
-                    "startDepth" : partOffset
+                    "startDepth" : depths.backward + partOffset
                 });
         if (definition.exclude)
         {
             opExtrude(context, id + "excludeExtrude", {
                         "entities" : definition.excludeRegions,
-                        "direction" : -face.normal,
+                        "direction" : depths.direction,
                         "endBound" : BoundingType.BLIND,
-                        "endDepth" : distance + partOffset,
+                        "endDepth" : depths.forward + partOffset,
                         "startBound" : BoundingType.BLIND,
-                        "startDepth" : partOffset
+                        "startDepth" : depths.backward + partOffset
                     });
 
             opBoolean(context, id + "excludeBoolean", {
@@ -338,7 +408,7 @@ function baseOperations(context is Context, id is Id, part, face, toolRad, defin
 
     try silent
     {
-        const ribs = buildRibs(context, id, face, ribEdgeQuery(definition), definition.autoSegments, distance, definition.ribThickness + (toolRad * 2), partOffset);
+        const ribs = buildRibs(context, id, face, ribEdgeQuery(definition), definition.autoSegments, depths, definition.ribThickness + (toolRad * 2), partOffset);
 
         if (!isQueryEmpty(context, ribs))
         {
@@ -401,7 +471,7 @@ function baseOperations(context is Context, id is Id, part, face, toolRad, defin
  * Builds rib bars from sketch edges (lines and arcs) plus generated 2D segments [start, end]
  * in the face plane's coordinates. Returns the rib bodies, or qNothing() if there are none.
  */
-function buildRibs(context is Context, id is Id, plane, ribEdges is Query, segments is array, distance, thickness, extDist) returns Query
+function buildRibs(context is Context, id is Id, plane, ribEdges is Query, segments is array, depths is map, thickness, extDist) returns Query
 {
     const lines = evaluateQuery(context, ribEdges);
     const length = thickness / 2;
@@ -475,11 +545,11 @@ function buildRibs(context is Context, id is Id, plane, ribEdges is Query, segme
 
     opExtrude(context, id + "ribExtrude", {
                 "entities" : qUnion(toExtrude),
-                "direction" : -plane.normal,
+                "direction" : depths.direction,
                 "endBound" : BoundingType.BLIND,
-                "endDepth" : distance + extDist,
+                "endDepth" : depths.forward + extDist,
                 "startBound" : BoundingType.BLIND,
-                "startDepth" : extDist
+                "startDepth" : depths.backward + extDist
             });
 
     opDeleteBodies(context, id + "deleteRibSketchs", { "entities" : qUnion(toDelete[]) });
